@@ -1,0 +1,28 @@
+/* public/style/style.css */
+body {
+    background-image: url('../images/hidden-leaf-village.jpg'); /* Adjust the path as necessary */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+   
+    margin: 0; /* Remove default margin */
+    font-family: Arial, sans-serif; /* Example font style */
+    background-color: black;
+    color:cornflowerblue;
+    font-weight: bold;
+    font-size: 40px;
+}
+
+.about_box {
+    --r:30px;
+    max-width: 500px;    
+    padding: var(--r);
+    margin: 80px auto;
+    box-sizing: border-box;
+    background:linear-gradient(45deg,green,lightblue);
+    -webkit-mask: radial-gradient(var(--r),#0000 99%,#000) 10000% 10000%/99.5% 99.5%;
+            mask: radial-gradient(var(--r),#0000 99%,#000) 10000% 10000%/99.5% 99.5%;
+    color:white;
+  }
+  
+  
