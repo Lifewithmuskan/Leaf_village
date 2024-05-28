@@ -1,38 +1,35 @@
-const express= require('express');
-const router=express.Router();
-const User=require('../models/user');
-const multer=require('multer');
-const fs=require('fs')
-const feed = require('../models/feed');
+const express = require('express');
+const router = express.Router();
+const User = require('../models/user');
+const multer = require('multer');
+const fs = require('fs').promises; // Use promises for async file operations
+const Feed = require('../models/feed');
 
+// Image upload configuration
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, './uploads'); // Ensure this directory exists
+    },
+    filename: function(req, file, cb) {
+        cb(null, file.fieldname + "_" + Date.now() + "_" + file.originalname);
+    }
+});
 
-//image upload
-var storage=multer.diskStorage({
- destination:function(req,file,cb) {
-    cb(null,'./uploads')
- }  ,
- filename:function(req,file,cb){
-    cb(null,file.fieldname+"_"+Date.now()+"_"+file.originalname);
- }
-})
-
-var upload=multer({
-    storage:storage,
+const upload = multer({
+    storage: storage
 }).single("image");
 
-
-
-// Insert a user into the database router
+// Insert a user into the database
 router.post('/add', upload, async (req, res) => {
     try {
         const user = new User({
             name: req.body.name,
             email: req.body.email,
             phone: req.body.phone,
-            image: req.file.filename,
+            image: req.file ? req.file.filename : '',
         });
 
-        await user.save(); 
+        await user.save();
 
         req.session.message = {
             type: 'success',
@@ -40,86 +37,78 @@ router.post('/add', upload, async (req, res) => {
         };
         res.redirect('/');
     } catch (err) {
-        res.json({ message: err.message, type: 'danger' });
+        res.status(500).json({ message: err.message, type: 'danger' });
     }
 });
 
-//Get all user routes
-
-
+// Get all users route
 router.get('/', async (req, res) => {
     try {
         const users = await User.find().exec();
         res.render('index.ejs', {
-            title: 'home page',
+            title: 'Home Page',
             user: users,
         });
     } catch (err) {
-        res.json({ message: err.message });
+        res.status(500).json({ message: err.message });
     }
 });
 
-
-router.get("/about",(req,res)=>{
-   res.render('aboutus.ejs',{title:'ABOUT US🪴'})
-})
-
-router.get("/add",(req,res)=>{
-    res.render('add_user.ejs',{title:'add user'});
+// About us route
+router.get('/about', (req, res) => {
+    res.render('aboutus.ejs', { title: 'ABOUT US🪴' });
 });
 
-router.get("/con",(req,res)=>{
-    res.render('contact.ejs',{title:'contact us '});
+// Add user form route
+router.get('/add', (req, res) => {
+    res.render('add_user.ejs', { title: 'Add User' });
 });
 
+// Contact us route
+router.get('/con', (req, res) => {
+    res.render('contact.ejs', { title: 'Contact Us' });
+});
 
-
-
-
+// Insert feedback into the database
 router.post('/feed', async (req, res) => {
     try {
-        const newFeed = new feed({
+        const newFeed = new Feed({
             name: req.body.name,
             email: req.body.email,
             text: req.body.text,
         });
 
-        await newFeed.save(); 
+        await newFeed.save();
 
         req.session.message = {
             type: 'success',
-            message: "Message sent successfully! We'll get back to you soon.",
+            message: "Message sent successfully! We'll get back to you soon."
         };
         res.redirect('/');
     } catch (err) {
-        res.json({ message: err.message, type: 'danger' });
+        res.status(500).json({ message: err.message, type: 'danger' });
     }
 });
 
-
-//Edit an user route
-
+// Edit user form route
 router.get('/edit/:id', async (req, res) => {
     try {
         const id = req.params.id;
         const user = await User.findById(id).exec();
         if (!user) {
             req.session.message = { type: 'danger', message: 'User not found!' };
-            res.redirect('/');
-        } else {
-            res.render('edit_user.ejs', {
-                title: "Edit User",
-                user: user,
-            });
+            return res.redirect('/');
         }
+        res.render('edit_user.ejs', {
+            title: "Edit User",
+            user: user,
+        });
     } catch (err) {
-        res.json({ message: err.message, type: 'danger' });
+        res.status(500).json({ message: err.message, type: 'danger' });
     }
 });
 
-
-//update user routes
-
+// Update user route
 router.post('/update/:id', upload, async (req, res) => {
     try {
         const id = req.params.id;
@@ -128,9 +117,9 @@ router.post('/update/:id', upload, async (req, res) => {
         if (req.file) {
             new_image = req.file.filename;
             try {
-                fs.unlinkSync('./uploads/' + req.body.old_image);
+                await fs.unlink('./uploads/' + req.body.old_image);
             } catch (err) {
-                console.log(err);
+                console.error('Error deleting old image:', err);
             }
         } else {
             new_image = req.body.old_image;
@@ -149,16 +138,11 @@ router.post('/update/:id', upload, async (req, res) => {
         };
         res.redirect('/');
     } catch (err) {
-        res.json({ message: err.message, type: 'danger' });
+        res.status(500).json({ message: err.message, type: 'danger' });
     }
 });
 
-
-
-
-
-
-// Delete user
+// Delete user route
 router.get('/delete/:id', async (req, res) => {
     try {
         const id = req.params.id;
@@ -175,11 +159,11 @@ router.get('/delete/:id', async (req, res) => {
         if (user.image) {
             const imagePath = `./uploads/${user.image}`;
             try {
-                if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
+                if (await fs.stat(imagePath)) {
+                    await fs.unlink(imagePath);
                 }
             } catch (err) {
-                console.error('Error while deleting the file:', err);
+                console.error('Error deleting user image:', err);
             }
         }
 
@@ -194,5 +178,4 @@ router.get('/delete/:id', async (req, res) => {
     }
 });
 
-
-module.exports=router;
+module.exports = router;
