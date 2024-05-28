@@ -26,7 +26,7 @@ app.use((req,res,next)=>{
 
 
 app.use(express.static("uploads"));
-app.use(express.static("C:/Users/DELL/OneDrive/Desktop/Nodeproject/public"));
+app.use(express.static("public"));
 
 
 
@@ -34,7 +34,7 @@ app.use(express.static("C:/Users/DELL/OneDrive/Desktop/Nodeproject/public"));
 app.set('view engine', 'ejs');
 
 //route prefix
-app.use("",require('./routes/routes'));
+app.use("",require('./routes/routes.js'));
 
 
 
