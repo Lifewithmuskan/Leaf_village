@@ -5,7 +5,16 @@ const session=require('express-session');
 const db=require('./db.js');
 
 const app=express();
+const cors=require('cors');
+
+const corsConfig={
+  origin:"*",
+    Credential:true,
+    methods:["GET","POST","PUT","DELETE"],
+}
+app.use(cors(corsConfig));
 const PORT=process.env.PORT||3000
+
 
 //middlewares
 
